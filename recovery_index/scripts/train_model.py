@@ -51,6 +51,7 @@ COURT_WINDOW_FEATURES_24M = [
         for suffix in ("diff", "log_change")
     ],
 ]
+# Эти признаки родились из одной месячной судебной сетки: last12, prev12, last24 и сравнение год к году.
 
 PROFILE_SCALE_FEATURES = [
     "profile_capital_sum",
@@ -61,6 +62,7 @@ PROFILE_SCALE_FEATURES = [
 EXCLUDED_MODEL_FEATURES = {
     "okved_main",
 }
+# ОКВЭД оставляю для отчета, но не для ML: иначе модель начинает объясняться отраслью, а не судебной динамикой.
 
 def load_master() -> pd.DataFrame:
     return pd.read_csv(DATA_FILE, dtype={"company_inn": "string", "company_ogrn": "string"}, low_memory=False)
@@ -79,6 +81,7 @@ def select_final_features(frame: pd.DataFrame) -> tuple[list[str], list[str]]:
         for column in requested
         if column not in EXCLUDED_MODEL_FEATURES and column in frame.columns and not frame[column].isna().all()
     ]
+    # Тут я специально держу allowlist признаков: меньше шансов случайно протащить статус или другой leakage.
     removed = [column for column in requested if column not in features]
     return features, removed
 
@@ -105,6 +108,7 @@ def build_pipeline(frame: pd.DataFrame, feature_columns: list[str]) -> Pipeline:
     return Pipeline([("preprocessor", preprocessor), ("model", model)])
 
 def build_calibrated_pipeline(frame: pd.DataFrame, feature_columns: list[str]) -> CalibratedClassifierCV:
+    # В сервис отдаю уже калиброванную вероятность, а не просто сырой score деревьев.
     return CalibratedClassifierCV(
         estimator=build_pipeline(frame, feature_columns),
         method="sigmoid",
@@ -181,6 +185,7 @@ def main() -> None:
     final_pipeline = build_calibrated_pipeline(subset, features)
     final_pipeline.fit(x, y)
     joblib.dump(final_pipeline, MODEL_FILE)
+    # Важности считаю на обычном GB: так проще объяснять слайд, сама рабочая модель при этом калиброванная.
     importance_pipeline = build_pipeline(subset, features)
     importance_pipeline.fit(x, y)
     importance = build_importance(importance_pipeline)

@@ -30,6 +30,7 @@ def load_env_file(path: Path = ENV_FILE) -> dict[str, str]:
 
 def get_api_key() -> str:
     env = load_env_file()
+    # Ключ держу снаружи кода: в репу он не должен попадать вообще.
     key = os.environ.get("OFDATA_API_KEY") or env.get("OFDATA_API_KEY")
     if not key:
         raise RuntimeError("OFDATA_API_KEY is missing")
@@ -52,6 +53,7 @@ def get_json(endpoint: str, **params: Any) -> dict[str, Any]:
             last_error = exc
             if attempt == DEFAULT_RETRIES - 1:
                 break
+            # Ofdata иногда просто рвет соединение; один короткий повтор тут реально спасает запуск.
             time.sleep(2 * (attempt + 1))
     raise RuntimeError(f"Ofdata request failed after retries: endpoint={endpoint}") from last_error
 
