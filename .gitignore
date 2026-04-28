@@ -1,0 +1,10 @@
+.env
+.env.*
+.DS_Store
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+recovery_index/.mpl-cache/
+recovery_index/service/raw/
+recovery_index/service/reports/

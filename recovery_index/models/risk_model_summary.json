@@ -1,0 +1,211 @@
+{
+  "model_name": "risk_model_12m",
+  "model_file": "recovery_index/models/risk_model_12m.joblib",
+  "dataset_file": "recovery_index/data/model_dataset.csv",
+  "target": "failed_within_12m_from_anchor",
+  "algorithm": "GradientBoostingClassifier",
+  "probability_calibration": {
+    "method": "sigmoid",
+    "cv": 5
+  },
+  "hyperparameters": {
+    "n_estimators": 120,
+    "learning_rate": 0.05,
+    "max_depth": 4
+  },
+  "rows": 1260,
+  "feature_count": 83,
+  "positive_rate": 0.3357142857142857,
+  "split": {
+    "train_rows": 1008,
+    "test_rows": 252,
+    "train_positive_rate": 0.3353174603174603,
+    "test_positive_rate": 0.3373015873015873
+  },
+  "thresholds_selected_on_train": {
+    "accuracy_threshold": 0.38,
+    "balanced_accuracy_threshold": 0.38,
+    "f1_threshold": 0.38
+  },
+  "service_threshold_name": "f1_threshold",
+  "service_threshold": 0.38,
+  "holdout_metrics_by_threshold": {
+    "accuracy_threshold": {
+      "threshold": 0.38,
+      "roc_auc": 0.8519196900317014,
+      "pr_auc": 0.8041755352345316,
+      "brier": 0.14074051006071253,
+      "accuracy": 0.8015873015873016,
+      "balanced_accuracy": 0.7809792180345192,
+      "precision": 0.7011494252873564,
+      "recall": 0.7176470588235294,
+      "f1": 0.7093023255813954,
+      "true_negative": 141,
+      "false_positive": 26,
+      "false_negative": 24,
+      "true_positive": 61,
+      "confusion_matrix": [
+        [
+          141,
+          26
+        ],
+        [
+          24,
+          61
+        ]
+      ]
+    },
+    "balanced_accuracy_threshold": {
+      "threshold": 0.38,
+      "roc_auc": 0.8519196900317014,
+      "pr_auc": 0.8041755352345316,
+      "brier": 0.14074051006071253,
+      "accuracy": 0.8015873015873016,
+      "balanced_accuracy": 0.7809792180345192,
+      "precision": 0.7011494252873564,
+      "recall": 0.7176470588235294,
+      "f1": 0.7093023255813954,
+      "true_negative": 141,
+      "false_positive": 26,
+      "false_negative": 24,
+      "true_positive": 61,
+      "confusion_matrix": [
+        [
+          141,
+          26
+        ],
+        [
+          24,
+          61
+        ]
+      ]
+    },
+    "f1_threshold": {
+      "threshold": 0.38,
+      "roc_auc": 0.8519196900317014,
+      "pr_auc": 0.8041755352345316,
+      "brier": 0.14074051006071253,
+      "accuracy": 0.8015873015873016,
+      "balanced_accuracy": 0.7809792180345192,
+      "precision": 0.7011494252873564,
+      "recall": 0.7176470588235294,
+      "f1": 0.7093023255813954,
+      "true_negative": 141,
+      "false_positive": 26,
+      "false_negative": 24,
+      "true_positive": 61,
+      "confusion_matrix": [
+        [
+          141,
+          26
+        ],
+        [
+          24,
+          61
+        ]
+      ]
+    }
+  },
+  "top_features": [
+    {
+      "feature": "num__last_anchor_window24_active_months",
+      "importance": 0.14755358505444946
+    },
+    {
+      "feature": "num__last_anchor_window24_count",
+      "importance": 0.08447409015349622
+    },
+    {
+      "feature": "num__last_anchor_window12_defendant_count",
+      "importance": 0.07824063449185584
+    },
+    {
+      "feature": "num__authorized_capital",
+      "importance": 0.06389862624289545
+    },
+    {
+      "feature": "num__last_anchor_window24_defendant_claim_sum",
+      "importance": 0.03544180970504561
+    },
+    {
+      "feature": "num__last_anchor_prev12_defendant_claim_sum",
+      "importance": 0.03125697318322592
+    },
+    {
+      "feature": "num__last_anchor_window24_claim_max",
+      "importance": 0.026656898434866873
+    },
+    {
+      "feature": "num__profile_headcount",
+      "importance": 0.025697881380808554
+    },
+    {
+      "feature": "num__last_anchor_window24_defendant_count",
+      "importance": 0.021363779577975448
+    },
+    {
+      "feature": "num__last_anchor_window12_defendant_claim_sum",
+      "importance": 0.01982762067337997
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_count_log_change",
+      "importance": 0.01972104478438887
+    },
+    {
+      "feature": "num__last_anchor_window24_claim_sum",
+      "importance": 0.01852100970573683
+    },
+    {
+      "feature": "num__safe_history_max_to_last_defendant_claim_ratio",
+      "importance": 0.018415988811836613
+    },
+    {
+      "feature": "num__maxsafe_defendant_claim_sum",
+      "importance": 0.01774197298097967
+    },
+    {
+      "feature": "num__maxsafe_cases_per_month",
+      "importance": 0.016061625881687705
+    },
+    {
+      "feature": "num__last_burst_case_ratio",
+      "importance": 0.015674946890096464
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_defendant_claim_sum_diff",
+      "importance": 0.015416879303037487
+    },
+    {
+      "feature": "num__last_burst_claim_ratio",
+      "importance": 0.015328744187123197
+    },
+    {
+      "feature": "num__region_code",
+      "importance": 0.014809348925469588
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_claim_sum_diff",
+      "importance": 0.013526998148984
+    },
+    {
+      "feature": "num__last_anchor_prev12_claim_max",
+      "importance": 0.013265975279961782
+    },
+    {
+      "feature": "num__last_burst_claim_per_month",
+      "importance": 0.012350122794739668
+    },
+    {
+      "feature": "num__maxsafe_case_ratio",
+      "importance": 0.01171975509865674
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_plaintiff_claim_sum_log_change",
+      "importance": 0.011074213560945088
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_defendant_claim_sum_log_change",
+      "importance": 0.010651409597272739
+    }
+  ]
+}
