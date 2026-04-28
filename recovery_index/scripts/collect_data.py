@@ -35,7 +35,6 @@ def collect_pages(endpoint: str, *, page_limit: int, stop_before: pd.Timestamp |
         if not items:
             break
         if stop_before is not None:
-            # Примечательно, что здесь можно не тащить всю древнюю историю: для суда хватает окна до cutoff.
             item_dates = [pd.to_datetime(item.get("Дата") or item.get("ИспПрДата"), errors="coerce") for item in items]
             if any(pd.notna(item_date) and item_date < stop_before for item_date in item_dates):
                 stopped_by_cutoff = True
@@ -87,7 +86,6 @@ def main() -> None:
         cases_file = company_dir / "legal_cases_pages.json"
         enforcements_file = company_dir / "enforcements_pages.json"
 
-        # По каждому ИНН сохраняю исходные блоки отдельно, чтобы потом пересобрать датасет без новых API-запросов.
         if args.force or not company_file.exists():
             write_json(company_file, get_json("company", inn=inn))
         if args.force or not finances_file.exists():

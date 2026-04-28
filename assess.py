@@ -6,7 +6,6 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
 ENGINE_DIR = ROOT_DIR / "recovery_index" / "service"
-# Короткий CLI-ярлык: на защите так проще показать запуск, без длинного пути до engine.
 sys.path.insert(0, str(ENGINE_DIR))
 
 from risk_engine import (  # noqa: E402
@@ -62,7 +61,6 @@ def main() -> None:
     slug = report_slug(args.inn, assessment["company"].get("name"))
     report_dir = REPORTS_DIR / slug
     report_dir.mkdir(parents=True, exist_ok=True)
-    # Пишу и JSON, и markdown: первый удобен для проверки чисел, второй - для чтения глазами.
     write_json(report_dir / f"{slug}.json", assessment)
     report_path = report_dir / f"{slug}.md"
     report_path.write_text(build_report(assessment), encoding="utf-8")

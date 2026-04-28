@@ -40,7 +40,6 @@ def assess_from_request(inn: str) -> dict[str, Any]:
     max_extra_case_pages = int(request.args.get("max_extra_case_pages") or DEFAULT_MAX_EXTRA_CASE_PAGES)
     max_extra_enforcement_pages = int(request.args.get("max_extra_enforcement_pages") or DEFAULT_MAX_EXTRA_ENFORCEMENT_PAGES)
 
-    # Веб-клиент дергает тот же engine, что и CLI; специально не держу две разные логики.
     assessment = assess_company(
         inn,
         force=force,
@@ -67,7 +66,6 @@ def fmt_money(value: Any) -> str:
         return "нет данных"
     if math.isnan(number):
         return "нет данных"
-    # Для защиты так читается быстрее: миллионы и миллиарды, без длинных полотен цифр.
     if abs(number) >= 1_000_000_000:
         return f"{number / 1_000_000_000:.2f} млрд ₽"
     if abs(number) >= 1_000_000:

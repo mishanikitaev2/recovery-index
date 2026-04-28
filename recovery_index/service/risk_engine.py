@@ -366,7 +366,6 @@ def status_gate(company_payload: dict[str, Any]) -> dict[str, Any]:
     liquid_reason = str(liquid.get("Наим") or "")
     text = f"{status_name} {liquid_reason}".lower()
 
-    # Если негативный статус уже известен, это уже не прогноз, а ретроспектива - модель тут не нужна.
     is_active = status_code == "001" and not liquid_date and "действует" in status_name.lower()
     is_negative = bool(liquid_date) or any(keyword in text for keyword in NEGATIVE_STATUS_KEYWORDS)
     if is_negative and not is_active:
@@ -412,7 +411,6 @@ def load_company_inputs(
         final_cutoff = OBSERVATION_END
         case_frame = bem.build_case_frame(inn)
         court_date_from = OBSERVATION_END - pd.DateOffset(years=court_lookback_years)
-        # Для сервиса берем свежую историю к текущей дате, а не учебный anchor из датасета.
         case_frame = case_frame[case_frame["case_date"] >= court_date_from].copy()
         enforcement_frame = bem.build_enforcement_frame(inn)
         efrsb_frame = bem.build_efrsb_frame(inn)
@@ -452,7 +450,6 @@ def build_scoring_row(inn: str, company_dir: Path, *, court_lookback_years: int 
         original_raw_dir = bem.RAW_RUN_DIR
         bem.RAW_RUN_DIR = company_dir.parent
         try:
-            # В сервисе собираю ровно те же признаки, что были при обучении; иначе демо было бы красивым, но нечестным.
             row = {
                 **sample_row,
                 **bem.prefixed_profile(profile),
@@ -578,7 +575,6 @@ def industry_baseline(row: dict[str, Any]) -> dict[str, Any]:
     if not experiment_file.exists():
         return {}
     frame = pd.read_csv(experiment_file, low_memory=False).copy()
-    # Отрасль здесь только справочный фон для отчета. В финальную ML-вероятность ОКВЭД не идет.
     okved = str(row.get("profile_okved_code") or row.get("okved_main") or "")[:2]
     okved_source = frame["profile_okved_code"].where(frame["profile_okved_code"].notna(), frame["okved_main"])
     frame = frame.assign(okved2=okved_source.astype(str).str[:2])
@@ -792,7 +788,6 @@ def build_result_state(
             "message": "Статус компании недостаточно определен для уверенной прогнозной трактовки.",
         }
     if score.get("probability") is None or data_quality["overall_score"] < 0.45 or (data_quality.get("blocking_limitations") or {}).get("legal_cases_truncated"):
-        # Лучше честно сказать "данных мало", чем красиво нарисовать вероятность на обрезанной судебной выдаче.
         return {
             "code": "insufficient_data",
             "label": "недостаточно данных",
@@ -976,13 +971,11 @@ def score_predictive(row: dict[str, Any], service_columns: list[str]) -> float:
     missing = {column: np.nan for column in service_columns if column not in frame.columns}
     if missing:
         frame = pd.concat([frame, pd.DataFrame([missing])], axis=1)
-    # Порядок колонок беру из сохраненного allowlist - это мелочь, но без нее sklearn легко уедет.
     return float(model.predict_proba(frame[service_columns])[:, 1][0])
 
 def risk_level(probability: float | None, threshold: float) -> str:
     if probability is None:
         return "not_scored"
-    # Порог модели и "высокая зона" разведены: пограничный сигнал не должен звучать как финальный приговор.
     if probability >= max(0.55, threshold + 0.12):
         return "high"
     if probability >= threshold:
@@ -1187,7 +1180,6 @@ def court_window_summary(row: dict[str, Any]) -> dict[str, Any]:
     def window(prefix: str) -> dict[str, Any]:
         return {field: bem.safe_float(row.get(f"{prefix}_{field}")) or 0.0 for field in fields}
 
-    # Этот блок нужен не модели, а человеку: быстро видно last12, prev12, last24 и изменение год к году.
     return {
         "last12": window("last_anchor_window12"),
         "previous12": window("last_anchor_prev12"),
@@ -1513,7 +1505,6 @@ def assess_company(
     legal_cases_truncated = bool(cases_meta.get("truncated_by_max_pages"))
     probability = None
     if gate["mode"] == "predictive" and int(row.get("last_burst_has_burst") or 0) == 1 and not legal_cases_truncated:
-        # Вероятность считаю только для действующих компаний и полной судебной истории; так меньше ложной уверенности.
         probability = score_predictive(row, load_service_columns())
     signal_context = build_signal_context(probability, row, scale, court_history)
     service_probability = probability

@@ -113,7 +113,6 @@ def build_case_frame(company_inn: str) -> pd.DataFrame:
             defendants = item.get("Ответ") or []
             in_plaintiffs = any(str(entry.get("ИНН") or "") == company_inn for entry in plaintiffs)
             in_defendants = any(str(entry.get("ИНН") or "") == company_inn for entry in defendants)
-            # Роль в деле принципиальна: ответчик и истец дают разный смысловой сигнал.
             if in_plaintiffs and in_defendants:
                 role = "both"
             elif in_defendants:
@@ -214,7 +213,6 @@ def snapshot_features(financial_years: dict[int, dict[str, float]], anchor_date:
         output[f"{prefix}_has_snapshot"] = 0
         return output
 
-    # Что немаловажно, финансовый снимок берется только за годы до anchor, иначе будет утечка будущего.
     cutoff_year = anchor_date.year - 1
     available_years = sorted(year for year in financial_years if year <= cutoff_year)
     if not available_years:
@@ -278,7 +276,6 @@ def aggregate_case_window(case_frame: pd.DataFrame, anchor_date: pd.Timestamp, m
 
     start_date = anchor_date - pd.DateOffset(months=months)
     subset = case_frame[(case_frame["case_date"] <= anchor_date) & (case_frame["case_date"] > start_date)].copy()
-    # Одно и то же окно считаю сразу в общей, ответчиковой и истцовой логике.
     output[f"{prefix}_count"] = float(len(subset))
     output[f"{prefix}_claim_sum"] = float(subset["claim_amount"].sum()) if not subset.empty else 0.0
     output[f"{prefix}_claim_max"] = float(subset["claim_amount"].max()) if not subset.empty else 0.0
@@ -310,7 +307,6 @@ def case_window_comparison_features(row: dict[str, Any], current_prefix: str, pr
     ):
         current = safe_float(row.get(f"{current_prefix}_{field}")) or 0.0
         previous = safe_float(row.get(f"{previous_prefix}_{field}")) or 0.0
-        # На первый взгляд diff достаточно, но log_change лучше переживает очень разные масштабы компаний.
         output[f"{output_prefix}_{field}_diff"] = current - previous
         output[f"{output_prefix}_{field}_log_change"] = float(np.log1p(current) - np.log1p(previous))
     return output
@@ -347,7 +343,6 @@ def build_bursts(case_frame: pd.DataFrame) -> list[dict[str, Any]]:
             current = [row]
             continue
         prev = current[-1]["case_month"]
-        # Один пустой месяц между активными месяцами не разрываю: в судах паузы часто чисто процессуальные.
         if month_diff(prev, month) <= 2:
             current.append(row)
         else:
@@ -602,7 +597,6 @@ def build_rows() -> pd.DataFrame:
     for sample_row in sample.to_dict("records"):
         company_inn = str(sample_row["company_inn"])
         outcome_date = pd.to_datetime(sample_row.get("first_negative_outcome_date"), errors="coerce")
-        # Для failed-компаний режу историю днем до события; да, это немного строго, но зато честно по времени.
         final_cutoff = outcome_date - pd.Timedelta(days=1) if pd.notna(outcome_date) else OBSERVATION_END
 
         company_profile = company_profile_from_raw(company_inn)
@@ -619,7 +613,6 @@ def build_rows() -> pd.DataFrame:
         last_defendant_claim = safe_float(last_burst.get("defendant_claim_sum") if last_burst else None) or 0.0
         maxsafe_defendant_claim = safe_float(maxsafe_burst.get("defendant_claim_sum") if maxsafe_burst else None) or 0.0
 
-        # Anchor - это момент, в который модель как будто смотрит на компанию, не заглядывая дальше.
         row: dict[str, Any] = {
             **sample_row,
             "failed_label": int(sample_row["final_status_label"] == "failed"),
