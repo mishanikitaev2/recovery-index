@@ -387,17 +387,6 @@ PAGE_TEMPLATE = """
           {% else %}
             <p class="muted">Стандартная финансовая отчетность в источнике не найдена. Профильный масштаб выше сохраняется в отчете и используется моделью.</p>
           {% endif %}
-          {% if ctx.cbr_insurance %}
-          {% set ins = ctx.cbr_insurance %}
-          <div class="kv">
-            <div>Контекст ЦБ</div><div>{{ ins.report_year }}</div>
-            <div>Регномер страховщика</div><div>{{ ins.cbr_register_number }}</div>
-            <div>Норматив капитала к обязательствам</div><div>{{ fmt_num(ins.capital_obligation_ratio, 2) }}</div>
-            <div>Страховые премии</div><div>{{ fmt_money(ins.gross_premiums_total) }}</div>
-            <div>Страховые выплаты</div><div>{{ fmt_money(ins.gross_payouts_total) }}</div>
-          </div>
-          <p class="muted">Для страховщиков это отдельный официальный контекст Банка России, а не признаки ML-модели.</p>
-          {% endif %}
         </div>
         <div class="card">
           <h2>Долговой и банкротный контекст</h2>

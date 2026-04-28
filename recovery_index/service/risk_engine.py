@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import io
 import json
-import re
 import sys
-import zipfile
 from pathlib import Path
 from typing import Any
-from urllib.request import Request, urlopen
 
 import joblib
 import numpy as np
@@ -29,13 +25,6 @@ DEFAULT_COURT_LOOKBACK_YEARS = 3
 DEFAULT_MAX_EXTRA_CASE_PAGES = 200
 DEFAULT_MAX_EXTRA_ENFORCEMENT_PAGES = 1
 MAX_FINANCIAL_SNAPSHOT_AGE_YEARS = 3
-CBR_INSURANCE_REPORT_YEAR = 2024
-CBR_INSURANCE_RATIO_DATE = "31.12.2024"
-CBR_INSURANCE_CARD_URL = "https://www.cbr.ru/finorg/foinfo/?ogrn={ogrn}"
-CBR_INSURANCE_RATIO_URL = f"https://www.cbr.ru/insurance/standard_ratio_funds/standard_ratio_funds_data?DY={CBR_INSURANCE_RATIO_DATE}"
-CBR_INSURANCE_PERFORMANCE_PAGE_URL = "https://cbr.ru/statistics/insurance/performance_indicators_ins/2024_4/"
-CBR_INSURANCE_PERFORMANCE_ZIP_URL = "https://cbr.ru/Content/Document/File/174435/2024_4.zip"
-HTTP_HEADERS = {"User-Agent": "Mozilla/5.0 recovery-index-prototype"}
 
 sys.path.insert(0, str(PROJECT_DIR / "scripts"))
 
@@ -111,114 +100,6 @@ def read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
-
-def fetch_url_bytes(url: str, *, timeout: int = 30) -> bytes:
-    request = Request(url, headers=HTTP_HEADERS)
-    with urlopen(request, timeout=timeout) as response:
-        return response.read()
-
-def parse_ru_number(value: Any) -> float | None:
-    if value is None:
-        return None
-    text = str(value).strip().replace("\xa0", "").replace(" ", "").replace(",", ".")
-    return bem.safe_float(text)
-
-def is_insurance_company(company_payload: dict[str, Any]) -> bool:
-    data = company_payload.get("data") or {}
-    okved = data.get("ОКВЭД") or {}
-    okved_code = str(okved.get("Код") or "")
-    okved_name = str(okved.get("Наим") or "").lower()
-    return okved_code.startswith("65.12") or "страхован" in okved_name
-
-def parse_cbr_register_number(html: str) -> str | None:
-    match = re.search(
-        r"Регистрационный номер</div>\s*<div[^>]*>\s*([^<]+?)\s*</div>",
-        html,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    return match.group(1).strip() if match else None
-
-def parse_cbr_capital_ratio(html: str, register_number: str) -> float | None:
-    pattern = rf"<td>\s*{re.escape(register_number)}\s*</td>\s*<td>.*?</td>\s*<td>\s*([^<]+?)\s*</td>"
-    match = re.search(pattern, html, flags=re.IGNORECASE | re.DOTALL)
-    return parse_ru_number(match.group(1)) if match else None
-
-def cbr_xlsx_row_value(zip_file: zipfile.ZipFile, filename: str, register_number: str) -> float | None:
-    try:
-        import openpyxl
-    except ImportError:
-        return None
-
-    with zip_file.open(filename) as source:
-        workbook = openpyxl.load_workbook(io.BytesIO(source.read()), read_only=True, data_only=True)
-    sheet = workbook.active
-    try:
-        for row in sheet.iter_rows(values_only=True):
-            if str(row[0]).strip() == str(register_number):
-                return bem.safe_float(row[2])
-    finally:
-        workbook.close()
-    return None
-
-def sum_rub_from_thousand(*values: float | None) -> float | None:
-    present = [float(value) for value in values if value is not None]
-    if not present:
-        return None
-    return sum(present) * 1_000.0
-
-def build_cbr_insurance_context(company_payload: dict[str, Any]) -> dict[str, Any]:
-    data = company_payload.get("data") or {}
-    ogrn = data.get("ОГРН")
-    if not is_insurance_company(company_payload):
-        return {"status": "not_insurance"}
-    if not ogrn:
-        return {"status": "missing_ogrn", "source": "Банк России"}
-
-    card_url = CBR_INSURANCE_CARD_URL.format(ogrn=ogrn)
-    try:
-        card_html = fetch_url_bytes(card_url).decode("utf-8", errors="ignore")
-        register_number = parse_cbr_register_number(card_html)
-        if not register_number:
-            return {"status": "not_found", "source": "Банк России", "card_url": card_url}
-
-        ratio_html = fetch_url_bytes(CBR_INSURANCE_RATIO_URL).decode("utf-8", errors="ignore")
-        capital_ratio = parse_cbr_capital_ratio(ratio_html, register_number)
-
-        archive = fetch_url_bytes(CBR_INSURANCE_PERFORMANCE_ZIP_URL)
-        with zipfile.ZipFile(io.BytesIO(archive)) as zip_file:
-            life_premiums = cbr_xlsx_row_value(zip_file, "1.xlsx", register_number)
-            life_payouts = cbr_xlsx_row_value(zip_file, "2.xlsx", register_number)
-            life_net_premiums = cbr_xlsx_row_value(zip_file, "5.xlsx", register_number)
-            life_net_payouts = cbr_xlsx_row_value(zip_file, "6.xlsx", register_number)
-            non_life_premiums = cbr_xlsx_row_value(zip_file, "7.xlsx", register_number)
-            non_life_payouts = cbr_xlsx_row_value(zip_file, "8.xlsx", register_number)
-            non_life_net_premiums = cbr_xlsx_row_value(zip_file, "11.xlsx", register_number)
-            non_life_net_payouts = cbr_xlsx_row_value(zip_file, "12.xlsx", register_number)
-
-        return {
-            "status": "ok",
-            "source": "Банк России",
-            "report_year": CBR_INSURANCE_REPORT_YEAR,
-            "ratio_date": CBR_INSURANCE_RATIO_DATE,
-            "card_url": card_url,
-            "ratio_url": CBR_INSURANCE_RATIO_URL,
-            "performance_url": CBR_INSURANCE_PERFORMANCE_PAGE_URL,
-            "cbr_register_number": register_number,
-            "capital_obligation_ratio": capital_ratio,
-            "gross_premiums_total": sum_rub_from_thousand(life_premiums, non_life_premiums),
-            "gross_payouts_total": sum_rub_from_thousand(life_payouts, non_life_payouts),
-            "net_premiums_total": sum_rub_from_thousand(life_net_premiums, non_life_net_premiums),
-            "net_payouts_total": sum_rub_from_thousand(life_net_payouts, non_life_net_payouts),
-            "non_life_gross_premiums": sum_rub_from_thousand(non_life_premiums),
-            "non_life_gross_payouts": sum_rub_from_thousand(non_life_payouts),
-        }
-    except Exception as exc:
-        return {
-            "status": "error",
-            "source": "Банк России",
-            "card_url": card_url,
-            "error": str(exc),
-        }
 
 def is_financial_snapshot_stale(snapshot_year: Any, prediction_date: Any = OBSERVATION_END) -> bool:
     year = bem.safe_float(snapshot_year)
@@ -303,11 +184,6 @@ def collect_company(
     company_file = company_dir / "company.json"
     if force or not company_file.exists():
         write_json(company_file, get_json("company", inn=inn))
-
-    company_payload = read_json(company_file)
-    cbr_insurance_file = company_dir / "cbr_insurance_context.json"
-    if is_insurance_company(company_payload) and (force or not cbr_insurance_file.exists()):
-        write_json(cbr_insurance_file, build_cbr_insurance_context(company_payload))
 
     finances_file = company_dir / "finances.json"
     if force or not finances_file.exists():
@@ -617,10 +493,8 @@ def build_source_freshness(
     company_file = company_dir / "company.json"
     cases_file = company_dir / "legal_cases_pages.json"
     finances_file = company_dir / "finances.json"
-    cbr_insurance_file = company_dir / "cbr_insurance_context.json"
     enforcements_file = company_dir / "enforcements_pages.json"
     cases_meta = (read_json(cases_file).get("meta") or {}) if cases_file.exists() else {}
-    cbr_insurance = read_json(cbr_insurance_file)
 
     sources = {
         "company_profile": {
@@ -665,14 +539,6 @@ def build_source_freshness(
             "note": "Сообщения ЕФРСБ из карточки компании",
         },
     }
-    if cbr_insurance_file.exists():
-        sources["cbr_insurance"] = {
-            "loaded": True,
-            "cache_updated_at": file_cache_updated_at(cbr_insurance_file),
-            "latest_report_year": cbr_insurance.get("report_year"),
-            "records_found": 1 if cbr_insurance.get("status") == "ok" else 0,
-            "note": "Страховой контекст Банка России; не используется в ML-score",
-        }
     return sources
 
 def build_data_quality(
@@ -731,14 +597,10 @@ def build_data_quality(
     missing_analytic = [name for name, flag in analytic_blocks.items() if not flag]
     notes: list[str] = []
     context_notes: list[str] = []
-    cbr_insurance = read_json(company_dir / "cbr_insurance_context.json")
     if not analytic_blocks["last_burst"]:
         notes.append("последний судебный всплеск не сформирован")
     if not context_blocks["financial_context"]:
-        if cbr_insurance.get("status") == "ok":
-            context_notes.append("стандартная финансовая отчетность не найдена; для страховщика добавлен контекст Банка России")
-        else:
-            context_notes.append("стандартная финансовая отчетность не найдена; используется профильный масштаб компании")
+        context_notes.append("стандартная финансовая отчетность не найдена; используется профильный масштаб компании")
     if financial_snapshot_stale:
         context_notes.append(f"финансовый снимок устарел: {fmt_value(row.get('last_anchor_fin_snapshot_year'))}")
     if not analytic_blocks["court_history"]:
@@ -1436,17 +1298,6 @@ def build_report(assessment: dict[str, Any]) -> str:
                 if context.get("financial_snapshot_year")
                 else ["- Стандартная финансовая отчетность в источнике не найдена; профильный масштаб выше сохраняется в отчете и используется моделью."]
             ),
-            *(
-                [
-                    f"- Страховой контекст ЦБ: `{fmt_value((context.get('cbr_insurance') or {}).get('report_year'))}`, рег. номер `{(context.get('cbr_insurance') or {}).get('cbr_register_number')}`",
-                    f"- Норматив капитала к обязательствам страховщика на {(context.get('cbr_insurance') or {}).get('ratio_date')}: `{fmt_value((context.get('cbr_insurance') or {}).get('capital_obligation_ratio'))}`",
-                    f"- Страховые премии за год: {fmt_money((context.get('cbr_insurance') or {}).get('gross_premiums_total'))}",
-                    f"- Страховые выплаты за год: {fmt_money((context.get('cbr_insurance') or {}).get('gross_payouts_total'))}",
-                    f"- Источник страхового контекста: {(context.get('cbr_insurance') or {}).get('performance_url')}",
-                ]
-                if context.get("cbr_insurance")
-                else []
-            ),
             "",
             "## Контекст сигнала",
             "- Факторы ниже помогают интерпретировать, из чего складывается риск-профиль компании в отчете.",
@@ -1532,9 +1383,6 @@ def assess_company(
     financial_snapshot_year = bem.safe_float(row.get("last_anchor_fin_snapshot_year"))
     financial_snapshot_stale = is_financial_snapshot_stale(financial_snapshot_year, row.get("service_prediction_date"))
     financial_context_available = financial_snapshot_year is not None and not financial_snapshot_stale
-    cbr_insurance = read_json(company_dir / "cbr_insurance_context.json")
-    if cbr_insurance.get("status") != "ok":
-        cbr_insurance = None
     context = {
         "enforcement_count": row.get("last_anchor_enf_count_total"),
         "enforcement_debt": row.get("last_anchor_enf_debt_total"),
@@ -1550,7 +1398,6 @@ def assess_company(
         "revenue": bem.safe_float(row.get("last_anchor_fin_revenue_t0")) if financial_context_available else None,
         "net_profit": bem.safe_float(row.get("last_anchor_fin_net_profit_t0")) if financial_context_available else None,
         "equity": bem.safe_float(row.get("last_anchor_fin_equity_t0")) if financial_context_available else None,
-        "cbr_insurance": cbr_insurance,
     }
     data_quality = build_data_quality(company_dir, row, last_burst, court_history, industry)
     result_state = build_result_state(gate, score, data_quality, last_burst, context)
