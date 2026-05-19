@@ -1,0 +1,292 @@
+{
+  "model_name": "risk_model_12m",
+  "model_file": "models/risk_model_12m.joblib",
+  "dataset_file": "data/model_dataset.csv",
+  "target": "failed_within_12m_from_assessment",
+  "algorithm": "GradientBoostingClassifier",
+  "probability_calibration": {
+    "method": "sigmoid",
+    "cv": 5
+  },
+  "hyperparameters": {
+    "n_estimators": 120,
+    "learning_rate": 0.05,
+    "max_depth": 4
+  },
+  "rows": 3000,
+  "feature_count": 83,
+  "positive_rate": 0.5,
+  "split": {
+    "scheme": "60/20/20 stratified, random_state=42, threshold tuned on validation",
+    "train_rows": 1800,
+    "test_rows": 600,
+    "validation_rows": 600,
+    "train_positive_rate": 0.5,
+    "test_positive_rate": 0.5,
+    "validation_positive_rate": 0.5
+  },
+  "threshold_selection_strategy": "f1-optimal on validation (600 rows, held out from training)",
+  "thresholds_selected_on_validation": {
+    "accuracy_threshold": 0.47000000000000003,
+    "balanced_accuracy_threshold": 0.47000000000000003,
+    "f1_threshold": 0.47000000000000003
+  },
+  "service_threshold_name": "f1_threshold",
+  "service_threshold": 0.47000000000000003,
+  "test_metrics_by_threshold": {
+    "accuracy_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.905988888888889,
+      "pr_auc": 0.8953119882131721,
+      "brier": 0.1228899154717708,
+      "accuracy": 0.8316666666666667,
+      "balanced_accuracy": 0.8316666666666667,
+      "precision": 0.8099688473520249,
+      "recall": 0.8666666666666667,
+      "f1": 0.8373590982286635,
+      "true_negative": 239,
+      "false_positive": 61,
+      "false_negative": 40,
+      "true_positive": 260,
+      "confusion_matrix": [
+        [
+          239,
+          61
+        ],
+        [
+          40,
+          260
+        ]
+      ]
+    },
+    "balanced_accuracy_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.905988888888889,
+      "pr_auc": 0.8953119882131721,
+      "brier": 0.1228899154717708,
+      "accuracy": 0.8316666666666667,
+      "balanced_accuracy": 0.8316666666666667,
+      "precision": 0.8099688473520249,
+      "recall": 0.8666666666666667,
+      "f1": 0.8373590982286635,
+      "true_negative": 239,
+      "false_positive": 61,
+      "false_negative": 40,
+      "true_positive": 260,
+      "confusion_matrix": [
+        [
+          239,
+          61
+        ],
+        [
+          40,
+          260
+        ]
+      ]
+    },
+    "f1_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.905988888888889,
+      "pr_auc": 0.8953119882131721,
+      "brier": 0.1228899154717708,
+      "accuracy": 0.8316666666666667,
+      "balanced_accuracy": 0.8316666666666667,
+      "precision": 0.8099688473520249,
+      "recall": 0.8666666666666667,
+      "f1": 0.8373590982286635,
+      "true_negative": 239,
+      "false_positive": 61,
+      "false_negative": 40,
+      "true_positive": 260,
+      "confusion_matrix": [
+        [
+          239,
+          61
+        ],
+        [
+          40,
+          260
+        ]
+      ]
+    }
+  },
+  "validation_metrics_by_threshold": {
+    "accuracy_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.8932444444444444,
+      "pr_auc": 0.8874763413811882,
+      "brier": 0.1291411916341673,
+      "accuracy": 0.835,
+      "balanced_accuracy": 0.835,
+      "precision": 0.8252427184466019,
+      "recall": 0.85,
+      "f1": 0.8374384236453202,
+      "true_negative": 246,
+      "false_positive": 54,
+      "false_negative": 45,
+      "true_positive": 255,
+      "confusion_matrix": [
+        [
+          246,
+          54
+        ],
+        [
+          45,
+          255
+        ]
+      ]
+    },
+    "balanced_accuracy_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.8932444444444444,
+      "pr_auc": 0.8874763413811882,
+      "brier": 0.1291411916341673,
+      "accuracy": 0.835,
+      "balanced_accuracy": 0.835,
+      "precision": 0.8252427184466019,
+      "recall": 0.85,
+      "f1": 0.8374384236453202,
+      "true_negative": 246,
+      "false_positive": 54,
+      "false_negative": 45,
+      "true_positive": 255,
+      "confusion_matrix": [
+        [
+          246,
+          54
+        ],
+        [
+          45,
+          255
+        ]
+      ]
+    },
+    "f1_threshold": {
+      "threshold": 0.47000000000000003,
+      "roc_auc": 0.8932444444444444,
+      "pr_auc": 0.8874763413811882,
+      "brier": 0.1291411916341673,
+      "accuracy": 0.835,
+      "balanced_accuracy": 0.835,
+      "precision": 0.8252427184466019,
+      "recall": 0.85,
+      "f1": 0.8374384236453202,
+      "true_negative": 246,
+      "false_positive": 54,
+      "false_negative": 45,
+      "true_positive": 255,
+      "confusion_matrix": [
+        [
+          246,
+          54
+        ],
+        [
+          45,
+          255
+        ]
+      ]
+    }
+  },
+  "top_features": [
+    {
+      "feature": "num__maxsafe_defendant_cases",
+      "importance": 0.2025456425503715
+    },
+    {
+      "feature": "num__last_anchor_window12_defendant_count",
+      "importance": 0.18198850455075533
+    },
+    {
+      "feature": "num__last_anchor_window24_defendant_active_months",
+      "importance": 0.12902355125731496
+    },
+    {
+      "feature": "num__maxsafe_plaintiff_cases",
+      "importance": 0.07395262857760956
+    },
+    {
+      "feature": "num__profile_headcount",
+      "importance": 0.025491521523292187
+    },
+    {
+      "feature": "num__profile_capital_sum",
+      "importance": 0.02537550337414931
+    },
+    {
+      "feature": "cat__last_anchor_window24_defendant_count_bucket_31-100",
+      "importance": 0.02461182979315872
+    },
+    {
+      "feature": "num__region_code",
+      "importance": 0.02126653328529461
+    },
+    {
+      "feature": "num__last_anchor_window24_defendant_claim_max",
+      "importance": 0.017129611302928876
+    },
+    {
+      "feature": "num__last_burst_plaintiff_cases",
+      "importance": 0.014641568400086789
+    },
+    {
+      "feature": "num__last_anchor_window24_plaintiff_offset_share",
+      "importance": 0.013534764656391952
+    },
+    {
+      "feature": "num__maxsafe_defendant_peak_claim_max",
+      "importance": 0.01136626851058335
+    },
+    {
+      "feature": "num__maxsafe_defendant_peak_claim_share",
+      "importance": 0.01124443629461874
+    },
+    {
+      "feature": "num__last_anchor_window24_signed_claim_pressure",
+      "importance": 0.010585687026643358
+    },
+    {
+      "feature": "num__last_anchor_enf_count_total",
+      "importance": 0.009866586865470678
+    },
+    {
+      "feature": "num__last_anchor_prev12_defendant_count",
+      "importance": 0.00957682180932863
+    },
+    {
+      "feature": "num__maxsafe_defendant_avg_claim_per_case",
+      "importance": 0.008937657362539719
+    },
+    {
+      "feature": "num__last_burst_signed_claim_pressure",
+      "importance": 0.007975206234304102
+    },
+    {
+      "feature": "num__maxsafe_defendant_claim_max",
+      "importance": 0.007612118949658853
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_defendant_claim_max_diff",
+      "importance": 0.00733507902587359
+    },
+    {
+      "feature": "num__maxsafe_defendant_peak_claim_sum",
+      "importance": 0.007260298347691516
+    },
+    {
+      "feature": "num__last_anchor_window12_vs_prev12_defendant_claim_max_log_change",
+      "importance": 0.007166593311365
+    },
+    {
+      "feature": "num__last_anchor_window24_defendant_claim_sum",
+      "importance": 0.006988953030072304
+    },
+    {
+      "feature": "num__maxsafe_defendant_claim_sum",
+      "importance": 0.006627060283166056
+    },
+    {
+      "feature": "num__maxsafe_window12_defendant_claim_sum",
+      "importance": 0.006208882687189822
+    }
+  ]
+}
